@@ -31,13 +31,18 @@ const init = () => {
             if (msg.text === '/menu') {
                 return financeBot.sendMessage(chatId, 'Menu', BUTTONS);
             }
+            if (msg.text === 'reset balance') {
+                DATA_BASE.currentWeek = { id: '', name: '', amount: 0 };
+                DATA_BASE.currentMonth = { id: '', name: '', amount: 0 };
+                return financeBot.sendMessage(chatId, `Balance reseted!`);
+            }
             if (DATA_BASE.changeLimit) {
                 return validInteger(financeBot, chatId, msg.text).then((amount) => {
                     DATA_BASE.limits.week = amount;
                     DATA_BASE.limits.month = amount * 4;
                     DATA_BASE.changeLimit = false;
                     financeBot.sendMessage(chatId, `Limit changed! New limits: weekly ${amount}, monthly ${amount * 4}!`);
-                });
+                }).catch(() => null);
             }
             accumulate(chatId, msg);
         })

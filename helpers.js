@@ -16,16 +16,18 @@ module.exports = {
         const leftWeek = DATA_BASE.limits.week - DATA_BASE.currentWeek.amount;
         const leftMonth = DATA_BASE.limits.month - DATA_BASE.currentMonth.amount;
         if (leftWeek < 0) {
-            financeBot.sendMessage(chatId, `${name.toUpperCase()} STOP! OVERSPENDING FOR THIS WEEK IS ${Math.abs(leftWeek)}`);
+            financeBot.sendMessage(chatId, `<b>${name.toUpperCase()} STOP!</b> OVERSPENDING FOR THIS WEEK IS ${Math.abs(leftWeek)}`, { parse_mode: 'HTML' });
             financeBot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/045/dde/045ddec3-882f-3d37-814b-d18cbbc6d583/4.webp');
         } else if (leftWeek < DATA_BASE.limits.week * 0.1) {
-            financeBot.sendMessage(chatId, `${name.toUpperCase()} ATTENTION! THERE ARE ${leftWeek} LEFT THIS WEEK`);
+            financeBot.sendMessage(chatId, `<b>${name.toUpperCase()} ATTENTION!</b> THERE ARE ${leftWeek} LEFT THIS WEEK`, { parse_mode: 'HTML' });
         }
         if (leftMonth < 0) {
-            financeBot.sendMessage(chatId, `${name.toUpperCase()} STOP! OVERSPENDING FOR THIS MONTH IS ${Math.abs(leftMonth)}`);
-            financeBot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/045/dde/045ddec3-882f-3d37-814b-d18cbbc6d583/4.webp');
+            financeBot.sendMessage(chatId, `<b>${name.toUpperCase()} STOP!</b> OVERSPENDING FOR THIS MONTH IS ${Math.abs(leftMonth)}`, { parse_mode: 'HTML' });
+            if  (leftWeek >= 0) {
+                financeBot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/045/dde/045ddec3-882f-3d37-814b-d18cbbc6d583/4.webp');
+            }
         } else if (leftMonth < DATA_BASE.limits.month * 0.1) {
-            financeBot.sendMessage(chatId, `${name.toUpperCase()} ATTENTION! THERE ARE ${leftMonth} LEFT THIS MONTH`);
+            financeBot.sendMessage(chatId, `<b>${name.toUpperCase()} ATTENTION!</b> THERE ARE ${leftMonth} LEFT THIS MONTH`, { parse_mode: 'HTML' });
         }
     },
     calcAndUpdateBD: (currentWeekId, weekName, amount) => {
@@ -39,7 +41,7 @@ module.exports = {
             }
             DATA_BASE.currentWeek = {
                 id: currentWeekId,
-                name: weekName,
+                week: weekName,
                 amount
             }
         }
@@ -53,12 +55,25 @@ module.exports = {
             }
             DATA_BASE.currentMonth = {
                 id: currentMonthId,
-                name: new Date().toLocaleString('en', { month: 'long' }),
+                month: new Date().toLocaleString('en', { month: 'long' }),
                 amount
             }
         }
 
         return Promise.resolve(showBalanceType);
+    },
+    toFormat: (value) => {
+        return JSON.stringify(value)
+        .replaceAll('},{', '\n')
+        .replaceAll('{', '')
+        .replaceAll('}', '')
+        .replaceAll('[', '')
+        .replaceAll(']', '')
+        .replaceAll('"', '')
+        .replaceAll(',', ' , ');
+    },
+    showCurrentBalanceDetails: (chatId, financeBot, text) => {
+        financeBot.sendMessage(chatId, text);
     },
     showCurrentBalance: (chatId, financeBot, type = 'all') => {
         let resolve;

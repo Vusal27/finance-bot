@@ -10,7 +10,7 @@ module.exports = {
             weeks: [],
             months: []
         },
-        currentWeek: { id: '', name: '', amount: 0 },
-        currentMonth: { id: '', name: '', amount: 0 }
+        currentWeek: { id: '', week: '', amount: 0 },
+        currentMonth: { id: '', month: '', amount: 0 }
     }
 };

@@ -1,4 +1,4 @@
-const { showCurrentBalance } = require('./helpers');
+const { showCurrentBalance, toFormat, showCurrentBalanceDetails } = require('./helpers');
 const { DATA_BASE } = require('./dataBase');
 
 module.exports = {
@@ -7,7 +7,8 @@ module.exports = {
             inline_keyboard: [
                 [
                     { text: 'Change Limits', callback_data: 'changeLimit' },
-                    { text: 'Balance', callback_data: 'showBalance' }
+                    { text: 'Balance', callback_data: 'showBalance' },
+                    { text: 'Balance Details', callback_data: 'BalanceDetails' }
                 ],
                 [
                     { text: 'Week History', callback_data: 'showWeekHistory' },
@@ -20,6 +21,17 @@ module.exports = {
     onClick: (financeBot, chatId, data) => {
         if (data === 'showBalance') {
             showCurrentBalance(chatId, financeBot);
+        }
+        if (data === 'BalanceDetails') {
+            if (DATA_BASE.currentWeek.id) {
+                const details = { week: DATA_BASE.currentWeek.week, amount: DATA_BASE.currentWeek.amount, limit: DATA_BASE.limits.week };
+                showCurrentBalanceDetails(chatId, financeBot, `${toFormat(details)}`);
+            }
+            if (DATA_BASE.currentMonth.id) {
+                const details = { month: DATA_BASE.currentMonth.month, amount: DATA_BASE.currentMonth.amount, limit: DATA_BASE.limits.month };
+                return showCurrentBalanceDetails(chatId, financeBot, `${toFormat(details)}`);
+            }
+            financeBot.sendMessage(chatId, 'Details are available after the first transaction!');
         }
         if (data === 'changeLimit') {
             financeBot.sendMessage(chatId, 'Enter new limit (only an integer)');
@@ -35,14 +47,7 @@ module.exports = {
             financeBot.sendMessage(chatId, `<b>Week history</b>`, { parse_mode: 'HTML' }).then(() => {
                 financeBot.sendMessage(
                     chatId,
-                    JSON.stringify(history)
-                        .replaceAll('},{', '\n')
-                        .replaceAll('{', '')
-                        .replaceAll('}', '')
-                        .replaceAll('[', '')
-                        .replaceAll(']', '')
-                        .replaceAll('"', '')
-                        .replaceAll(',', ' , '),
+                    toFormat(history),
                     { parse_mode: 'HTML' }
                 );
             })
