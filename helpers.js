@@ -9,16 +9,22 @@ module.exports = {
                     return Promise.reject();
                 })
         }
+        if (amount < 1) {
+            return financeBot.sendMessage(chatId, 'The number must be positive')
+                .then(() => {
+                    return Promise.reject();
+                })
+        }
         return Promise.resolve(amount);
     },
     attention: (financeBot, chatId, msg) => {
         const name = msg.from.first_name;
-        const leftWeek = DATA_BASE.limits.week - DATA_BASE.currentWeek.amount;
-        const leftMonth = DATA_BASE.limits.month - DATA_BASE.currentMonth.amount;
+        const leftWeek = DATA_BASE.accounts[DATA_BASE.user].limits.week - DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount;
+        const leftMonth = DATA_BASE.accounts[DATA_BASE.user].limits.month - DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount;
         if (leftWeek < 0) {
             financeBot.sendMessage(chatId, `<b>${name.toUpperCase()} STOP!</b> OVERSPENDING FOR THIS WEEK IS ${Math.abs(leftWeek)}`, { parse_mode: 'HTML' });
             financeBot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/045/dde/045ddec3-882f-3d37-814b-d18cbbc6d583/4.webp');
-        } else if (leftWeek < DATA_BASE.limits.week * 0.1) {
+        } else if (leftWeek < DATA_BASE.accounts[DATA_BASE.user].limits.week * 0.1) {
             financeBot.sendMessage(chatId, `<b>${name.toUpperCase()} ATTENTION!</b> THERE ARE ${leftWeek} LEFT THIS WEEK`, { parse_mode: 'HTML' });
         }
         if (leftMonth < 0) {
@@ -26,36 +32,36 @@ module.exports = {
             if  (leftWeek >= 0) {
                 financeBot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/045/dde/045ddec3-882f-3d37-814b-d18cbbc6d583/4.webp');
             }
-        } else if (leftMonth < DATA_BASE.limits.month * 0.1) {
+        } else if (leftMonth < DATA_BASE.accounts[DATA_BASE.user].limits.month * 0.1) {
             financeBot.sendMessage(chatId, `<b>${name.toUpperCase()} ATTENTION!</b> THERE ARE ${leftMonth} LEFT THIS MONTH`, { parse_mode: 'HTML' });
         }
     },
     calcAndUpdateBD: (currentWeekId, weekName, amount) => {
         let showBalanceType;
-        if (DATA_BASE.currentWeek.id === currentWeekId) {
-            DATA_BASE.currentWeek.amount = DATA_BASE.currentWeek.amount + amount
+        if (DATA_BASE.accounts[DATA_BASE.user].currentWeek.id === currentWeekId) {
+            DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount = DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount + amount
         } else {
-            if (!!DATA_BASE.currentWeek.id) {
+            if (!!DATA_BASE.accounts[DATA_BASE.user].currentWeek.id) {
                 showBalanceType = 'week';
-                DATA_BASE.history.weeks.push({ ...DATA_BASE.currentWeek, limit: DATA_BASE.limits.week });
+                DATA_BASE.accounts[DATA_BASE.user].history.weeks.push({ ...DATA_BASE.accounts[DATA_BASE.user].currentWeek, limit: DATA_BASE.accounts[DATA_BASE.user].limits.week });
             }
-            const startValue = Math.max(DATA_BASE.currentWeek.amount - DATA_BASE.limits.week, 0);
-            DATA_BASE.currentWeek = {
+            const startValue = Math.max(DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount - DATA_BASE.accounts[DATA_BASE.user].limits.week, 0);
+            DATA_BASE.accounts[DATA_BASE.user].currentWeek = {
                 id: currentWeekId,
                 week: weekName,
                 amount: startValue + amount
             }
         }
         const currentMonthId = new Date().toLocaleDateString().slice(3);
-        if (DATA_BASE.currentMonth.id === currentMonthId) {
-            DATA_BASE.currentMonth.amount = DATA_BASE.currentMonth.amount + amount;
+        if (DATA_BASE.accounts[DATA_BASE.user].currentMonth.id === currentMonthId) {
+            DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount = DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount + amount;
         } else {
-            if (!!DATA_BASE.currentMonth.id) {
+            if (!!DATA_BASE.accounts[DATA_BASE.user].currentMonth.id) {
                 showBalanceType = !showBalanceType ? 'month' : 'all';
-                DATA_BASE.history.months.push({ ...DATA_BASE.currentMonth, limit: DATA_BASE.limits.month });
+                DATA_BASE.accounts[DATA_BASE.user].history.months.push({ ...DATA_BASE.accounts[DATA_BASE.user].currentMonth, limit: DATA_BASE.accounts[DATA_BASE.user].limits.month });
             }
-            const startValue = Math.max(DATA_BASE.currentMonth.amount - DATA_BASE.limits.month, 0);
-            DATA_BASE.currentMonth = {
+            const startValue = Math.max(DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount - DATA_BASE.accounts[DATA_BASE.user].limits.month, 0);
+            DATA_BASE.accounts[DATA_BASE.user].currentMonth = {
                 id: currentMonthId,
                 month: new Date().toLocaleString('en', { month: 'long' }),
                 amount: startValue | amount
@@ -82,21 +88,21 @@ module.exports = {
         const readyPromise = new Promise((res) => {
             resolve = res;
         });
-        const weekAvailable = DATA_BASE.limits.week - DATA_BASE.currentWeek.amount;
+        const weekAvailable = DATA_BASE.accounts[DATA_BASE.user].limits.week - DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount;
         if (type === 'week' || type === 'all') {
             if (weekAvailable >= 0) {
-                financeBot.sendMessage(chatId, `Week - ${DATA_BASE.currentWeek.amount} spent, ${weekAvailable} available!`).then(() => resolve());
+                financeBot.sendMessage(chatId, `Week - ${DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount} spent, ${weekAvailable} available!`).then(() => resolve());
             } else {
-                financeBot.sendMessage(chatId, `Week - ${DATA_BASE.currentWeek.amount} spent, OVER LIMIT ON ${Math.abs(weekAvailable)}!`).then(() => resolve());
+                financeBot.sendMessage(chatId, `Week - ${DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount} spent, OVER LIMIT ON ${Math.abs(weekAvailable)}!`).then(() => resolve());
             }
         }
         if (type === 'month' || type === 'all') {
             return readyPromise.then(() => {
-                const monthAvailable = DATA_BASE.limits.month - DATA_BASE.currentMonth.amount;
+                const monthAvailable = DATA_BASE.accounts[DATA_BASE.user].limits.month - DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount;
                 if (monthAvailable >= 0) {
-                    return financeBot.sendMessage(chatId, `Month - ${DATA_BASE.currentMonth.amount} spent, ${monthAvailable} available!`);
+                    return financeBot.sendMessage(chatId, `Month - ${DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount} spent, ${monthAvailable} available!`);
                 } else {
-                    return financeBot.sendMessage(chatId, `Month - ${DATA_BASE.currentMonth.amount} spent, OVER LIMIT ON ${Math.abs(monthAvailable)}!`);
+                    return financeBot.sendMessage(chatId, `Month - ${DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount} spent, OVER LIMIT ON ${Math.abs(monthAvailable)}!`);
                 }
             })
         }

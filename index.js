@@ -2,7 +2,7 @@ const TelegramApi = require('node-telegram-bot-api');
 const { getWeekData, showCurrentBalance, calcAndUpdateBD, attention, validInteger } = require('./helpers');
 const { start } = require('./start');
 const { DATA_BASE } = require('./dataBase');
-const { BUTTONS, onClick } = require('./buttons');
+const { MENU_BUTTONS, onClick } = require('./buttons');
 require('dotenv').config()
 
 const financeBot = new TelegramApi(process.env.TOKEN, { polling: true });
@@ -29,18 +29,18 @@ const init = () => {
         console.log(msg, chatId);
         start(chatId, msg, financeBot).then(() => {
             if (msg.text === '/menu') {
-                return financeBot.sendMessage(chatId, 'Menu', BUTTONS);
+                return financeBot.sendMessage(chatId, 'Menu', MENU_BUTTONS);
             }
             if (msg.text === 'reset balance') {
-                DATA_BASE.currentWeek = { id: '', name: '', amount: 0 };
-                DATA_BASE.currentMonth = { id: '', name: '', amount: 0 };
+                DATA_BASE.accounts[DATA_BASE.user].currentWeek = { id: '', name: '', amount: 0 };
+                DATA_BASE.accounts[DATA_BASE.user].currentMonth = { id: '', name: '', amount: 0 };
                 return financeBot.sendMessage(chatId, `Balance reseted!`);
             }
-            if (DATA_BASE.changeLimit) {
+            if (DATA_BASE.state === 'changeLimit') {
                 return validInteger(financeBot, chatId, msg.text).then((amount) => {
-                    DATA_BASE.limits.week = amount;
-                    DATA_BASE.limits.month = amount * 4;
-                    DATA_BASE.changeLimit = false;
+                    DATA_BASE.accounts[DATA_BASE.user].limits.week = amount;
+                    DATA_BASE.accounts[DATA_BASE.user].limits.month = amount * 4;
+                    DATA_BASE.state = '';
                     financeBot.sendMessage(chatId, `Limit changed! New limits: weekly ${amount}, monthly ${amount * 4}!`);
                 }).catch(() => null);
             }

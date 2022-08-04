@@ -2,7 +2,17 @@ const { showCurrentBalance, toFormat, showCurrentBalanceDetails } = require('./h
 const { DATA_BASE } = require('./dataBase');
 
 module.exports = {
-    BUTTONS: {
+    LOGIN_BUTTONS: {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [
+                    { text: 'Create', callback_data: 'create' },
+                    { text: 'Log in', callback_data: 'login' }
+                ]
+            ]
+        })
+    },
+    MENU_BUTTONS: {
         reply_markup: JSON.stringify({
             inline_keyboard: [
                 [
@@ -11,39 +21,46 @@ module.exports = {
                     { text: 'Balance Details', callback_data: 'BalanceDetails' }
                 ],
                 [
-                    { text: 'Week History', callback_data: 'showWeekHistory' },
-                    { text: 'Month  History', callback_data: 'showMonthHistory' }
+                    { text: 'History by week', callback_data: 'showWeekHistory' },
+                    { text: 'History by month', callback_data: 'showMonthHistory' }
                 ]
             ]
         })
     },
-    
     onClick: (financeBot, chatId, data) => {
+        if (data === 'create') {
+            DATA_BASE.state = 'create';
+            return financeBot.sendMessage(chatId, 'Enter account name(must not contain spaces) and password separated by a space!');
+        }
+        if (data === 'login') {
+            DATA_BASE.state = 'login';
+            return financeBot.sendMessage(chatId, 'Enter your account name and password separated by a space!');
+        }
         if (data === 'showBalance') {
-            showCurrentBalance(chatId, financeBot);
+            return showCurrentBalance(chatId, financeBot);
         }
         if (data === 'BalanceDetails') {
-            if (DATA_BASE.currentWeek.id) {
-                const details = { week: DATA_BASE.currentWeek.week, amount: DATA_BASE.currentWeek.amount, limit: DATA_BASE.limits.week };
+            if (DATA_BASE.accounts[DATA_BASE.user].currentWeek.id) {
+                const details = { week: DATA_BASE.accounts[DATA_BASE.user].currentWeek.week, amount: DATA_BASE.accounts[DATA_BASE.user].currentWeek.amount, limit: DATA_BASE.accounts[DATA_BASE.user].limits.week };
                 showCurrentBalanceDetails(chatId, financeBot, `${toFormat(details)}`);
             }
-            if (DATA_BASE.currentMonth.id) {
-                const details = { month: DATA_BASE.currentMonth.month, amount: DATA_BASE.currentMonth.amount, limit: DATA_BASE.limits.month };
+            if (DATA_BASE.accounts[DATA_BASE.user].currentMonth.id) {
+                const details = { month: DATA_BASE.accounts[DATA_BASE.user].currentMonth.month, amount: DATA_BASE.accounts[DATA_BASE.user].currentMonth.amount, limit: DATA_BASE.accounts[DATA_BASE.user].limits.month };
                 return showCurrentBalanceDetails(chatId, financeBot, `${toFormat(details)}`);
             }
             financeBot.sendMessage(chatId, 'Details are available after the first transaction!');
         }
         if (data === 'changeLimit') {
             financeBot.sendMessage(chatId, 'Enter new limit (only an integer)');
-            DATA_BASE.changeLimit = true;
+            DATA_BASE.state = 'changeLimit';
         }
         if (data === 'showWeekHistory') {
-            if (!DATA_BASE.history.weeks.length) {
+            if (!DATA_BASE.accounts[DATA_BASE.user].history.weeks.length) {
                 return financeBot.sendMessage(chatId, `<b>Week history</b>`, { parse_mode: 'HTML' }).then(() => {
                     financeBot.sendMessage(chatId, 'No history yet');
                 });
             }
-            const history = DATA_BASE.history.weeks.map((item) => ({ Period: item.name, Spent: item.amount, limit: item.limit }));
+            const history = DATA_BASE.accounts[DATA_BASE.user].history.weeks.map((item) => ({ Period: item.name, Spent: item.amount, limit: item.limit }));
             financeBot.sendMessage(chatId, `<b>Week history</b>`, { parse_mode: 'HTML' }).then(() => {
                 financeBot.sendMessage(
                     chatId,
@@ -53,12 +70,12 @@ module.exports = {
             })
         }
         if (data === 'showMonthHistory') {
-            if (!DATA_BASE.history.months.length) {
+            if (!DATA_BASE.accounts[DATA_BASE.user].history.months.length) {
                 return financeBot.sendMessage(chatId, `<b>Month history</b>`, { parse_mode: 'HTML' }).then(() => {
                     financeBot.sendMessage(chatId, 'No history yet');
                 })
             }
-            const history = DATA_BASE.history.months.map((item) => ({ Month: item.name, Spent: item.amount, limit: item.limit }));
+            const history = DATA_BASE.accounts[DATA_BASE.user].history.months.map((item) => ({ Month: item.name, Spent: item.amount, limit: item.limit }));
             financeBot.sendMessage(chatId, `<b>Month history</b>`, { parse_mode: 'HTML' }).then(() => {
                 financeBot.sendMessage(
                     chatId,
