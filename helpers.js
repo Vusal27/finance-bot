@@ -39,10 +39,11 @@ module.exports = {
                 showBalanceType = 'week';
                 DATA_BASE.history.weeks.push({ ...DATA_BASE.currentWeek, limit: DATA_BASE.limits.week });
             }
+            const startValue = Math.max(DATA_BASE.currentWeek.amount - DATA_BASE.limits.week, 0);
             DATA_BASE.currentWeek = {
                 id: currentWeekId,
                 week: weekName,
-                amount
+                amount: startValue + amount
             }
         }
         const currentMonthId = new Date().toLocaleDateString().slice(3);
@@ -53,10 +54,11 @@ module.exports = {
                 showBalanceType = !showBalanceType ? 'month' : 'all';
                 DATA_BASE.history.months.push({ ...DATA_BASE.currentMonth, limit: DATA_BASE.limits.month });
             }
+            const startValue = Math.max(DATA_BASE.currentMonth.amount - DATA_BASE.limits.month, 0);
             DATA_BASE.currentMonth = {
                 id: currentMonthId,
                 month: new Date().toLocaleString('en', { month: 'long' }),
-                amount
+                amount: startValue | amount
             }
         }
 
