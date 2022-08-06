@@ -4,7 +4,7 @@ const { LOGIN_BUTTONS } = require('./buttons');
 module.exports = {
     start: (chatId, msg, financeBot) => {
         return new Promise((res) => {
-            if (msg.text === '/start' || DATA_BASE.state === 'start') {
+            if (msg.text === '/start' || DATA_BASE.state === 'start' || !DATA_BASE.state) {
                 DATA_BASE.state = 'start';
                 return financeBot.sendMessage(chatId, 'Before using FinanceBot, create or log in to a financial account', LOGIN_BUTTONS);
             }
@@ -55,7 +55,9 @@ module.exports = {
                     return financeBot.sendMessage(chatId, `Great! You have set the following limits: weekly ${limit}, monthly ${limit * 4}!`);
                 }
             }
-            res();
+            if (DATA_BASE.state === 'readyToUse') {
+                res();
+            }
         })
     }
 };
